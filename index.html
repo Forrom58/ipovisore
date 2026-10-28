@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#000000">
-<title>Visore</title>
+<title>Ipovisore</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <style>
@@ -131,7 +131,7 @@ $('btnAvvio').onclick = async () => {
     }
     $('avvio').style.display = 'none';
     tieniAcceso(); ridimensiona(); if (!inDisegno) { inDisegno = true; requestAnimationFrame(disegna); }
-    parla('Visore pronto. ' + MODI[s.modo].nome + '. Zoom ' + ZOOM[s.z] + '.');
+    parla('Ipovisore pronto. ' + MODI[s.modo].nome + '. Zoom ' + ZOOM[s.z] + '.');
   } catch(e) {
     $('msgAvvio').textContent = 'Fotocamera non disponibile: consenti l\'accesso alla fotocamera e riprova.';
     parla('Fotocamera non disponibile');
@@ -223,7 +223,7 @@ $('foto').onclick = () => {
   cv.toBlob(b => {
     const a = document.createElement('a');
     const d = new Date(), p = n => String(n).padStart(2, '0');
-    a.download = `visore-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`;
+    a.download = `ipovisore-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`;
     a.href = URL.createObjectURL(b); a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     avviso('Foto salvata');
@@ -342,10 +342,10 @@ $('esci').onclick = async () => {
   try { if (document.fullscreenElement) await document.exitFullscreen(); } catch(e){}
   window.close();
   setTimeout(() => {
-    $('btnAvvio').textContent = 'Riapri il visore';
+    $('btnAvvio').textContent = 'Riapri Ipovisore';
     $('msgAvvio').textContent = 'Fotocamera spenta. Per chiudere del tutto usa il tasto delle app recenti di Android.';
     $('avvio').style.display = 'flex';
-    parla('Visore chiuso. Fotocamera spenta.');
+    parla('Ipovisore chiuso. Fotocamera spenta.');
   }, 300);
 };
 

@@ -1,6 +1,6 @@
 {
-  "name": "Visore per ipovedenti",
-  "short_name": "Visore",
+  "name": "Ipovisore",
+  "short_name": "Ipovisore",
   "description": "Ingranditore con fotocamera, contrasti, memo audio e lettura del testo",
   "lang": "it",
   "start_url": "./",
