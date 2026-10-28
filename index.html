@@ -115,8 +115,11 @@ function avviso(t, voce = true){
 
 /* ---------- avvio ---------- */
 $('btnAvvio').onclick = async () => {
-  try { await document.documentElement.requestFullscreen(); } catch(e){}
-  try { await screen.orientation.lock('landscape'); } catch(e){}
+  const comeApp = matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches;
+  if (!comeApp) {   // solo dentro Chrome: nell'app installata lo schermo intero lo dà il manifest, senza scritte
+    try { await document.documentElement.requestFullscreen(); } catch(e){}
+    try { await screen.orientation.lock('landscape'); } catch(e){}
+  }
   try {
     const st = await navigator.mediaDevices.getUserMedia({
       audio:false,

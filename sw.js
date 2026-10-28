@@ -1,4 +1,4 @@
-const CACHE = 'ipovisore-v8';
+const CACHE = 'ipovisore-v9';
 const BASE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
@@ -10,7 +10,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   if (e.request.mode === 'navigate') {
-    e.respondWith(fetch(e.request, {cache:'no-store'}).then(res => { const c = res.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return res; }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html'))));
+    e.respondWith(fetch(e.request.url, {cache:'no-store', credentials:'same-origin'}).then(res => { const c = res.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return res; }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html'))));
     return;
   }
   e.respondWith(
