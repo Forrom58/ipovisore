@@ -41,7 +41,7 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 
 | Cosa | Dove | Valore attuale |
 |---|---|---|
-| Livelli di zoom | `const ZOOM` | 1, 1.5, 2, 3, 4, 5, 6, 8, 10 (dice "minimo" e "massimo" agli estremi) |
+| Livelli di zoom | `const ZOOM` | 1, 1.5, 2, 3, 4, 5, 6, 8, 10 |
 | Combinazioni di colori | `const MODI` | normale, scala di grigi, nero su bianco, bianco su nero, giallo su nero, nero su giallo |
 | Velocità della voce | `const VELOCITA` | 0.8 (1 = normale) |
 | Colori dei tasti | `:root` nel CSS | `--t:#4A3426` (marrone), `--g:#F5E6C8` (crema) |
@@ -50,7 +50,7 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 ## Come si aggiorna
 
 1. Modificare i file su GitHub. Claude lo fa direttamente.
-2. In `sw.js` aumentare il numero della cache (`ipovisore-v6` diventa `ipovisore-v7`), altrimenti i telefoni non vedono la versione nuova.
+2. In `sw.js` aumentare il numero della cache (`ipovisore-v7` diventa `ipovisore-v8`), altrimenti i telefoni non vedono la versione nuova.
 3. Copiare gli stessi file in `C:\Appoggio-Claude\IPOVISORE`.
 4. Aspettare circa 10 minuti, perché GitHub Pages può servire la versione vecchia per un po'. Poi chiudere e riaprire l'app.
 
