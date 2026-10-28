@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>Visore</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{--g:#F5E6C8;--n:#000;--t:#4A3426;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{height:100%;background:#000;color:var(--g);font-family:system-ui,sans-serif;overflow:hidden;touch-action:none}
+  #app{display:flex;flex-direction:row;height:100%}
+  .bar{display:flex;flex-direction:column;gap:2.5vh;padding:1.5vh;background:#111;width:17vw;flex:none}
+  .bar button{flex:1;border:0;border-radius:1.5vh;background:var(--t);color:var(--g);font-size:4.5vh;font-weight:700;line-height:1.1;padding:0 .5vw}
+  .bar button.on{background:var(--g);color:var(--t)}
+  .bar button:active{transform:scale(.96)}
+  #vista{flex:1;position:relative;min-height:0}
+  canvas#c{width:100%;height:100%;display:block}
+  #stato{position:absolute;left:50%;top:2vh;transform:translateX(-50%);background:var(--t);color:var(--g);border:0.4vh solid var(--g);font-size:4.5vh;font-weight:700;padding:.6vh 2vh;border-radius:1vh;display:none;white-space:nowrap}
+  #rec{position:absolute;right:2vh;top:2vh;width:5vh;height:5vh;border-radius:50%;background:#f00;display:none}
+  .pannello{position:absolute;inset:0;background:#000;display:none;flex-direction:column;padding:2vh;gap:1.5vh;overflow-y:auto;touch-action:pan-y;z-index:5}
+  .pannello h1{font-size:6vh}
+  .pannello button{border:0;border-radius:1.5vh;background:var(--t);color:var(--g);font-size:4.5vh;font-weight:700;padding:2vh}
+  .riga{display:flex;gap:1.5vh}.riga button:first-child{flex:1;text-align:left}
+  #avvio{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4vh;z-index:9}
+  #avvio button{font-size:8vh;font-weight:700;padding:4vh 8vh;border:0;border-radius:3vh;background:var(--t);color:var(--g)}
+  #avvio p{font-size:4vh;padding:0 4vw;text-align:center}
+</style>
+</head>
+<body>
+<div id="avvio"><button id="btnAvvio">Tocca per iniziare</button><p id="msgAvvio"></p></div>
+
+<div id="app">
+  <div class="bar">
+    <button id="zMeno">Zoom −</button>
+    <button id="colori">Colori</button>
+    <button id="luce">Luce</button>
+    <button id="elenco">Ascolta memo</button>
+    <button id="zPiu">Zoom +</button>
+  </div>
+  <div id="vista">
+    <canvas id="c"></canvas>
+    <div id="stato"></div>
+    <div id="rec"></div>
+    <div class="pannello" id="pMemo">
+      <div class="riga"><button id="chiudiMemo">Chiudi</button></div>
+      <div id="listaMemo"></div>
+    </div>
+  </div>
+  <div class="bar">
+    <button id="blocca">Blocca</button>
+    <button id="foto">Foto</button>
+    <button id="memo">Memo</button>
+    <button id="leggi">Leggi</button>
+    <button id="esci">Esci</button>
+  </div>
+</div>
+
+<video id="v" playsinline muted style="display:none"></video>
+
+<svg width="0" height="0" style="position:absolute">
+  <filter id="giallo" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+  </filter>
+  <filter id="sfgiallo" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="1 0 0 0 0  1 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+  </filter>
+</svg>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const video = $('v'), cv = $('c'), ctx = cv.getContext('2d');
+
+const ZOOM = [1, 1.5, 2, 3, 4, 5, 6, 8, 10];
+const MODI = [
+  {nome:'Colori normali',  f:'none'},
+  {nome:'Nero su bianco',  f:'grayscale(1) contrast(2.2)'},
+  {nome:'Bianco su nero',  f:'grayscale(1) contrast(2.2) invert(1)'},
+  {nome:'Giallo su nero',  f:'grayscale(1) contrast(2.2) invert(1) url(#giallo)'},
+  {nome:'Nero su giallo',  f:'grayscale(1) contrast(2.2) url(#sfgiallo)'}
+];
+
+let s = {z:0, modo:0};
+try { Object.assign(s, JSON.parse(localStorage.getItem('visore') || '{}')); } catch(e){}
+const salva = () => { try { localStorage.setItem('visore', JSON.stringify(s)); } catch(e){} };
+
+let track = null, torcia = false, torciaOk = false;
+let fermo = null;           // canvas con l'immagine bloccata
+let pan = {x:0, y:0};       // spostamento in pixel della sorgente
+let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+
+/* ---------- voce ---------- */
+const VELOCITA = 0.8;   // velocità della voce: 1 = normale, più basso = più lento
+let voceIt = null;
+function caricaVoci(){ const v = speechSynthesis.getVoices(); voceIt = v.find(x => x.lang === 'it-IT') || v.find(x => x.lang.startsWith('it')) || null; }
+speechSynthesis.onvoiceschanged = caricaVoci; caricaVoci();
+function parla(t, interrompi = true){
+  if (interrompi) speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(t);
+  u.lang = 'it-IT'; if (voceIt) u.voice = voceIt; u.rate = VELOCITA;
+  speechSynthesis.speak(u);
+}
+let tStato;
+function avviso(t, voce = true){
+  const e = $('stato'); e.textContent = t; e.style.display = 'block';
+  clearTimeout(tStato); tStato = setTimeout(() => e.style.display = 'none', 1800);
+  if (voce) parla(t);
+}
+
+/* ---------- avvio ---------- */
+$('btnAvvio').onclick = async () => {
+  try { await document.documentElement.requestFullscreen(); } catch(e){}
+  try { await screen.orientation.lock('landscape'); } catch(e){}
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({
+      audio:false,
+      video:{facingMode:{ideal:'environment'}, width:{ideal:3840}, height:{ideal:2160}}
+    });
+    video.srcObject = st; await video.play();
+    track = st.getVideoTracks()[0];
+    const cap = track.getCapabilities ? track.getCapabilities() : {};
+    torciaOk = !!cap.torch;
+    if (!torciaOk) $('luce').textContent = 'Fuoco';
+    if (cap.focusMode && cap.focusMode.includes('continuous')) {
+      try { await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); } catch(e){}
+    }
+    $('avvio').style.display = 'none';
+    tieniAcceso(); ridimensiona(); if (!inDisegno) { inDisegno = true; requestAnimationFrame(disegna); }
+    parla('Visore pronto. ' + MODI[s.modo].nome + '. Zoom ' + ZOOM[s.z] + ' volte.');
+  } catch(e) {
+    $('msgAvvio').textContent = 'Fotocamera non disponibile: consenti l\'accesso alla fotocamera e riprova.';
+    parla('Fotocamera non disponibile');
+  }
+};
+
+let wl = null, inDisegno = false;
+async function tieniAcceso(){ try { wl = await navigator.wakeLock.request('screen'); } catch(e){} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && track) tieniAcceso(); });
+
+/* ---------- disegno ---------- */
+function ridimensiona(){
+  const r = cv.getBoundingClientRect();
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+}
+window.addEventListener('resize', ridimensiona);
+
+function sorgente(){
+  if (fermo) return {el:fermo, w:fermo.width, h:fermo.height};
+  return {el:video, w:video.videoWidth, h:video.videoHeight};
+}
+function areaVisibile(){
+  const {w, h} = sorgente(), cw = cv.width, ch = cv.height;
+  const base = Math.max(cw / w, ch / h), k = base * ZOOM[s.z];
+  const vw = cw / k, vh = ch / k;
+  const mx = (w - vw) / 2, my = (h - vh) / 2;
+  pan.x = Math.max(-mx, Math.min(mx, pan.x)); pan.y = Math.max(-my, Math.min(my, pan.y));
+  return {sx: mx + pan.x, sy: my + pan.y, vw, vh, k};
+}
+function disegna(){
+  const {el, w} = sorgente();
+  if (w) {
+    const a = areaVisibile();
+    ctx.filter = MODI[s.modo].f;
+    ctx.drawImage(el, a.sx, a.sy, a.vw, a.vh, 0, 0, cv.width, cv.height);
+    ctx.filter = 'none';
+  }
+  requestAnimationFrame(disegna);
+}
+
+/* ---------- spostamento col dito (quando ingrandito) e doppio tocco = centra ---------- */
+let ptr = null, ultimoTocco = 0;
+cv.addEventListener('pointerdown', e => {
+  ptr = {x:e.clientX, y:e.clientY}; cv.setPointerCapture(e.pointerId);
+  const ora = Date.now(); if (ora - ultimoTocco < 300) { pan = {x:0, y:0}; avviso('Centrato'); } ultimoTocco = ora;
+});
+cv.addEventListener('pointermove', e => {
+  if (!ptr) return;
+  const k = areaVisibile().k;
+  pan.x -= (e.clientX - ptr.x) * dpr / k; pan.y -= (e.clientY - ptr.y) * dpr / k;
+  ptr = {x:e.clientX, y:e.clientY};
+});
+cv.addEventListener('pointerup', () => ptr = null);
+cv.addEventListener('pointercancel', () => ptr = null);
+
+/* ---------- comandi ---------- */
+$('zPiu').onclick  = () => { if (s.z < ZOOM.length - 1) s.z++; salva(); avviso('Zoom ' + ZOOM[s.z]); };
+$('zMeno').onclick = () => { if (s.z > 0) s.z--; if (s.z === 0) pan = {x:0, y:0}; salva(); avviso('Zoom ' + ZOOM[s.z]); };
+$('colori').onclick = () => { s.modo = (s.modo + 1) % MODI.length; salva(); avviso(MODI[s.modo].nome); };
+
+$('luce').onclick = async () => {
+  if (!track) return;
+  if (torciaOk) {
+    torcia = !torcia;
+    try { await track.applyConstraints({advanced:[{torch:torcia}]}); $('luce').classList.toggle('on', torcia); avviso(torcia ? 'Luce accesa' : 'Luce spenta'); }
+    catch(e){ avviso('Luce non disponibile'); }
+  } else {
+    try {
+      await track.applyConstraints({advanced:[{focusMode:'single-shot'}]});
+      await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
+      avviso('Messa a fuoco');
+    } catch(e){ avviso('Messa a fuoco automatica'); }
+  }
+};
+
+function blocca(stato){
+  if (stato && !fermo && video.videoWidth) {
+    fermo = document.createElement('canvas');
+    fermo.width = video.videoWidth; fermo.height = video.videoHeight;
+    fermo.getContext('2d').drawImage(video, 0, 0);
+  } else if (!stato) fermo = null;
+  $('blocca').classList.toggle('on', !!fermo);
+  $('blocca').textContent = fermo ? 'Sblocca' : 'Blocca';
+}
+$('blocca').onclick = () => { blocca(!fermo); avviso(fermo ? 'Immagine bloccata' : 'Immagine dal vivo'); };
+
+/* ---------- foto ---------- */
+$('foto').onclick = () => {
+  cv.toBlob(b => {
+    const a = document.createElement('a');
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    a.download = `visore-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`;
+    a.href = URL.createObjectURL(b); a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    avviso('Foto salvata');
+  }, 'image/png');
+};
+
+/* ---------- memo audio (IndexedDB) ---------- */
+let db;
+const apriDb = () => new Promise((ok, ko) => {
+  const r = indexedDB.open('visore', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('memo', {keyPath:'id', autoIncrement:true});
+  r.onsuccess = () => { db = r.result; ok(); }; r.onerror = ko;
+});
+const tx = (m) => db.transaction('memo', m).objectStore('memo');
+const tuttiMemo = () => new Promise(ok => { const r = tx('readonly').getAll(); r.onsuccess = () => ok(r.result); });
+apriDb();
+
+let rec = null, pezzi = [];
+$('memo').onclick = async () => {
+  if (rec && rec.state === 'recording') { rec.stop(); return; }
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({audio:true});
+    pezzi = []; rec = new MediaRecorder(st);
+    rec.ondataavailable = e => pezzi.push(e.data);
+    rec.onstop = () => {
+      st.getTracks().forEach(t => t.stop());
+      const blob = new Blob(pezzi, {type: rec.mimeType});
+      tx('readwrite').add({data: Date.now(), blob});
+      $('rec').style.display = 'none'; $('memo').classList.remove('on'); $('memo').textContent = 'Memo';
+      avviso('Memo salvato');
+    };
+    speechSynthesis.cancel();
+    rec.start();
+    $('rec').style.display = 'block'; $('memo').classList.add('on'); $('memo').textContent = 'Stop memo';
+    avviso('Registrazione', false);
+  } catch(e){ avviso('Microfono non disponibile'); }
+};
+
+let player = null;
+async function mostraMemo(){
+  const l = $('listaMemo'); l.innerHTML = '';
+  const m = (await tuttiMemo()).reverse();
+  if (!m.length) { l.innerHTML = '<h1>Nessun memo</h1>'; parla('Nessun memo'); }
+  else parla(m.length + (m.length === 1 ? ' memo' : ' memo') + '. Tocca un memo per ascoltarlo.');
+  m.forEach((x, i) => {
+    const d = new Date(x.data);
+    const nome = `Memo ${m.length - i}, ${d.toLocaleDateString('it-IT')} ore ${d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`;
+    const r = document.createElement('div'); r.className = 'riga';
+    const b1 = document.createElement('button'); b1.textContent = '▶ ' + nome;
+    b1.onclick = () => { speechSynthesis.cancel(); if (player) player.pause(); player = new Audio(URL.createObjectURL(x.blob)); player.play(); };
+    const b2 = document.createElement('button'); b2.textContent = 'Elimina';
+    b2.onclick = () => {
+      if (b2.dataset.ok) { tx('readwrite').delete(x.id); parla('Memo eliminato'); mostraMemo(); }
+      else { b2.dataset.ok = 1; b2.textContent = 'Conferma'; parla('Tocca di nuovo per eliminare'); }
+    };
+    r.append(b1, b2); l.append(r);
+  });
+  $('pMemo').style.display = 'flex';
+}
+$('elenco').onclick = mostraMemo;
+$('chiudiMemo').onclick = () => { if (player) player.pause(); $('pMemo').style.display = 'none'; parla('Chiuso'); };
+
+/* ---------- lettura del testo (OCR + sintesi vocale) ---------- */
+let ocr = null, leggendo = false;
+$('leggi').onclick = async () => {
+  if (leggendo || speechSynthesis.speaking) { speechSynthesis.cancel(); leggendo = false; $('leggi').classList.remove('on'); avviso('Lettura fermata', false); return; }
+  if (!window.Tesseract) { avviso('Lettura non disponibile: serve internet la prima volta'); return; }
+  leggendo = true; $('leggi').classList.add('on');
+  blocca(true);
+  parla('Riconosco il testo, attendi');
+  try {
+    const a = areaVisibile(), src = sorgente();
+    const t = document.createElement('canvas');
+    const scala = Math.min(1, 2000 / Math.max(a.vw, a.vh));
+    t.width = Math.round(a.vw * scala); t.height = Math.round(a.vh * scala);
+    const tc = t.getContext('2d'); tc.filter = 'grayscale(1) contrast(1.6)';
+    tc.drawImage(src.el, a.sx, a.sy, a.vw, a.vh, 0, 0, t.width, t.height);
+    if (!ocr) ocr = await Tesseract.createWorker('ita');
+    const { data } = await ocr.recognize(t);
+    const testo = data.text.replace(/-\n/g, '').replace(/\s*\n\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!leggendo) return;
+    if (testo.length < 3) { parla('Nessun testo trovato. Prova con più luce o meno zoom.'); }
+    else {
+      speechSynthesis.cancel();
+      const frasi = testo.match(/[^.!?;:]+[.!?;:]*/g) || [testo];
+      frasi.forEach((f, i) => {
+        const u = new SpeechSynthesisUtterance(f.trim()); u.lang = 'it-IT'; if (voceIt) u.voice = voceIt; u.rate = VELOCITA;
+        if (i === frasi.length - 1) u.onend = () => { leggendo = false; $('leggi').classList.remove('on'); };
+        speechSynthesis.speak(u);
+      });
+      return;
+    }
+  } catch(e) { parla('Errore nella lettura'); }
+  leggendo = false; $('leggi').classList.remove('on');
+};
+
+/* ---------- esci ---------- */
+let tEsci = null;
+$('esci').onclick = async () => {
+  if (!tEsci) {
+    $('esci').classList.add('on'); $('esci').textContent = 'Conferma';
+    parla('Tocca di nuovo per uscire');
+    tEsci = setTimeout(() => { tEsci = null; $('esci').classList.remove('on'); $('esci').textContent = 'Esci'; }, 3000);
+    return;
+  }
+  clearTimeout(tEsci); tEsci = null;
+  $('esci').classList.remove('on'); $('esci').textContent = 'Esci';
+  speechSynthesis.cancel();
+  if (rec && rec.state === 'recording') rec.stop();
+  if (player) player.pause();
+  if (track) { try { await track.applyConstraints({advanced:[{torch:false}]}); } catch(e){} }
+  if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+  video.srcObject = null; track = null; torcia = false; $('luce').classList.remove('on');
+  blocca(false);
+  try { if (wl) await wl.release(); } catch(e){} wl = null;
+  try { if (document.fullscreenElement) await document.exitFullscreen(); } catch(e){}
+  window.close();
+  setTimeout(() => {
+    $('btnAvvio').textContent = 'Riapri il visore';
+    $('msgAvvio').textContent = 'Fotocamera spenta. Per chiudere del tutto usa il tasto delle app recenti di Android.';
+    $('avvio').style.display = 'flex';
+    parla('Visore chiuso. Fotocamera spenta.');
+  }, 300);
+};
+
+/* ---------- offline ---------- */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
