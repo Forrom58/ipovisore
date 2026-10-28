@@ -78,6 +78,7 @@ const video = $('v'), cv = $('c'), ctx = cv.getContext('2d');
 const ZOOM = [1, 1.5, 2, 3, 4, 5, 6, 8, 10];
 const MODI = [
   {nome:'Colori normali',  f:'none'},
+  {nome:'Scala di grigi',  f:'grayscale(1)'},
   {nome:'Nero su bianco',  f:'grayscale(1) contrast(2.2)'},
   {nome:'Bianco su nero',  f:'grayscale(1) contrast(2.2) invert(1)'},
   {nome:'Giallo su nero',  f:'grayscale(1) contrast(2.2) invert(1) url(#giallo)'},
@@ -130,7 +131,7 @@ $('btnAvvio').onclick = async () => {
     }
     $('avvio').style.display = 'none';
     tieniAcceso(); ridimensiona(); if (!inDisegno) { inDisegno = true; requestAnimationFrame(disegna); }
-    parla('Visore pronto. ' + MODI[s.modo].nome + '. Zoom ' + ZOOM[s.z] + ' volte.');
+    parla('Visore pronto. ' + MODI[s.modo].nome + '. Zoom ' + ZOOM[s.z] + '.');
   } catch(e) {
     $('msgAvvio').textContent = 'Fotocamera non disponibile: consenti l\'accesso alla fotocamera e riprova.';
     parla('Fotocamera non disponibile');
