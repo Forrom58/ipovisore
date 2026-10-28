@@ -76,6 +76,7 @@ const $ = id => document.getElementById(id);
 const video = $('v'), cv = $('c'), ctx = cv.getContext('2d');
 
 const ZOOM = [1, 1.5, 2, 3, 4, 5, 6, 8, 10];
+const nomeZoom = () => s.z === 0 ? 'Zoom minimo' : s.z === ZOOM.length - 1 ? 'Zoom massimo' : 'Zoom ' + String(ZOOM[s.z]).replace('.', ',');
 const MODI = [
   {nome:'Colori normali',  f:'none'},
   {nome:'Scala di grigi',  f:'grayscale(1)'},
@@ -131,7 +132,7 @@ $('btnAvvio').onclick = async () => {
     }
     $('avvio').style.display = 'none';
     tieniAcceso(); ridimensiona(); if (!inDisegno) { inDisegno = true; requestAnimationFrame(disegna); }
-    parla('Ipovisore pronto. ' + MODI[s.modo].nome + '. Zoom ' + ZOOM[s.z] + '.');
+    parla('Ipovisore pronto. ' + MODI[s.modo].nome + '. ' + nomeZoom() + '.');
   } catch(e) {
     $('msgAvvio').textContent = 'Fotocamera non disponibile: consenti l\'accesso alla fotocamera e riprova.';
     parla('Fotocamera non disponibile');
@@ -188,8 +189,8 @@ cv.addEventListener('pointerup', () => ptr = null);
 cv.addEventListener('pointercancel', () => ptr = null);
 
 /* ---------- comandi ---------- */
-$('zPiu').onclick  = () => { if (s.z < ZOOM.length - 1) s.z++; salva(); avviso('Zoom ' + ZOOM[s.z]); };
-$('zMeno').onclick = () => { if (s.z > 0) s.z--; if (s.z === 0) pan = {x:0, y:0}; salva(); avviso('Zoom ' + ZOOM[s.z]); };
+$('zPiu').onclick  = () => { if (s.z < ZOOM.length - 1) s.z++; salva(); avviso(nomeZoom()); };
+$('zMeno').onclick = () => { if (s.z > 0) s.z--; if (s.z === 0) pan = {x:0, y:0}; salva(); avviso(nomeZoom()); };
 $('colori').onclick = () => { s.modo = (s.modo + 1) % MODI.length; salva(); avviso(MODI[s.modo].nome); };
 
 $('luce').onclick = async () => {
