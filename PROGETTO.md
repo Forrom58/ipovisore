@@ -36,6 +36,8 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 - Ogni tasto dice a voce cosa ha fatto.
 - Con lo zoom attivo si sposta l'immagine col dito; un doppio tocco la ricentra.
 - **Esci** spegne fotocamera, luce e schermo intero.
+- All'apertura la fotocamera parte da sola. La pagina "Tocca per iniziare" compare solo se la fotocamera non parte (pulsante "Riprova") e dopo Esci (pulsante "Riapri Ipovisore").
+- Il saluto vocale all'avvio può non sentirsi: Chrome a volte blocca la voce prima del primo tocco.
 
 ## Impostazioni nel codice (`index.html`)
 
@@ -50,7 +52,7 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 ## Come si aggiorna
 
 1. Modificare i file su GitHub. Claude lo fa direttamente.
-2. In `sw.js` aumentare il numero della cache (`ipovisore-v9` diventa `ipovisore-v10`), altrimenti i telefoni non vedono la versione nuova.
+2. In `sw.js` aumentare il numero della cache (`ipovisore-v10` diventa `ipovisore-v11`), altrimenti i telefoni non vedono la versione nuova.
 3. Copiare gli stessi file in `C:\Appoggio-Claude\IPOVISORE`.
 4. Aspettare circa 10 minuti, perché GitHub Pages può servire la versione vecchia per un po'. Poi chiudere e riaprire l'app.
 

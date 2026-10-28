@@ -24,7 +24,7 @@
   .pannello h1{font-size:6vh}
   .pannello button{border:0;border-radius:1.5vh;background:var(--t);color:var(--g);font-size:4.5vh;font-weight:700;padding:2vh}
   .riga{display:flex;gap:1.5vh}.riga button:first-child{flex:1;text-align:left}
-  #avvio{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4vh;z-index:9}
+  #avvio{position:fixed;inset:0;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:4vh;z-index:9}
   #avvio button{font-size:8vh;font-weight:700;padding:4vh 8vh;border:0;border-radius:3vh;background:var(--t);color:var(--g)}
   #avvio p{font-size:4vh;padding:0 4vw;text-align:center}
 </style>
@@ -114,7 +114,7 @@ function avviso(t, voce = true){
 }
 
 /* ---------- avvio ---------- */
-$('btnAvvio').onclick = async () => {
+async function avvia() {
   const comeApp = matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches;
   if (!comeApp) {   // solo dentro Chrome: nell'app installata lo schermo intero lo dà il manifest, senza scritte
     try { await document.documentElement.requestFullscreen(); } catch(e){}
@@ -137,10 +137,13 @@ $('btnAvvio').onclick = async () => {
     tieniAcceso(); ridimensiona(); if (!inDisegno) { inDisegno = true; requestAnimationFrame(disegna); }
     parla('Ipovisore pronto. ' + MODI[s.modo].nome + '. ' + nomeZoom() + '.');
   } catch(e) {
+    $('btnAvvio').textContent = 'Riprova';
     $('msgAvvio').textContent = 'Fotocamera non disponibile: consenti l\'accesso alla fotocamera e riprova.';
+    $('avvio').style.display = 'flex';
     parla('Fotocamera non disponibile');
   }
-};
+}
+$('btnAvvio').onclick = avvia;
 
 let wl = null, inDisegno = false;
 async function tieniAcceso(){ try { wl = await navigator.wakeLock.request('screen'); } catch(e){} }
@@ -352,6 +355,9 @@ $('esci').onclick = async () => {
     parla('Ipovisore chiuso. Fotocamera spenta.');
   }, 300);
 };
+
+/* ---------- partenza automatica ---------- */
+avvia();
 
 /* ---------- offline ---------- */
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
