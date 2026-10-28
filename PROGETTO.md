@@ -21,7 +21,7 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 | `index.html` | Tutta l'app: grafica, tasti, fotocamera, voce, memo, lettura del testo |
 | `manifest.json` | Nome, icone, orientamento orizzontale, modo `fullscreen` (schermo intero senza scritte di Chrome) |
 | `sw.js` | Funzionamento offline (cache) |
-| `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | Icone: lente beige su sfondo marrone |
+| `icon-192.png`, `icon-512.png` | Icona: lente beige su sfondo marrone, banda ambra in basso con scritta IPO (stile delle altre PWA) |
 
 ## Tasti
 
@@ -52,7 +52,7 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 ## Come si aggiorna
 
 1. Modificare i file su GitHub. Claude lo fa direttamente.
-2. In `sw.js` aumentare il numero della cache (`ipovisore-v10` diventa `ipovisore-v11`), altrimenti i telefoni non vedono la versione nuova.
+2. In `sw.js` aumentare il numero della cache (`ipovisore-v11` diventa `ipovisore-v12`), altrimenti i telefoni non vedono la versione nuova.
 3. Copiare gli stessi file in `C:\Appoggio-Claude\IPOVISORE`.
 4. Aspettare circa 10 minuti, perché GitHub Pages può servire la versione vecchia per un po'. Poi chiudere e riaprire l'app.
 
