@@ -37,7 +37,7 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 - Con lo zoom attivo si sposta l'immagine col dito; un doppio tocco la ricentra.
 - **Esci** spegne fotocamera, luce e schermo intero.
 - All'apertura la fotocamera parte da sola. La pagina "Tocca per iniziare" compare solo se la fotocamera non parte (pulsante "Riprova") e dopo Esci (pulsante "Riapri Ipovisore").
-- Il saluto vocale all'avvio può non sentirsi: Chrome a volte blocca la voce prima del primo tocco.
+- All'avvio la voce dice "Ipovisore pronto", poi i colori e lo zoom (provato sul Realme il 28/10/2026).
 
 ## Impostazioni nel codice (`index.html`)
 
@@ -64,6 +64,9 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 | Voce di Google poco chiara | Impostazioni di Android, Sintesi vocale. Per una voce migliore serve un motore a pagamento (Vocalizer, Acapela). |
 | Punto verde sopra Zoom + | È l'avviso di Android che la fotocamera è in uso. Non si può togliere. |
 | Per chiudere l'app | Tasto Esci, oppure tasto delle app recenti di Android. |
+| Pagina "Tocca per iniziare" inutile | Tolta: la fotocamera parte da sola (28/10/2026). |
+| Scritta bianca all'apertura con il nome vecchio "Visore per ipovedenti" | È la schermata di avvio di Android. Si aggiorna da sola in qualche giorno, oppure subito disinstallando e reinstallando l'app. |
+| Scritta di Chrome "è a schermo intero, per uscire…" | Tolta: lo schermo intero ora viene dal manifest (`fullscreen`). Serve l'aggiornamento automatico dell'app installata, oppure una reinstallazione. |
 
 ## Note
 
