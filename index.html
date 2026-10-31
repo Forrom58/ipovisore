@@ -97,6 +97,7 @@ let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
 /* ---------- voce ---------- */
 const VELOCITA = 0.8;   // velocità della voce: 1 = normale, più basso = più lento
+const VELOCITA_LETTURA = 0.9;   // velocità della voce quando legge un testo (tasto Leggi)
 let voceIt = null;
 function caricaVoci(){ const v = speechSynthesis.getVoices(); voceIt = v.find(x => x.lang === 'it-IT') || v.find(x => x.lang.startsWith('it')) || null; }
 speechSynthesis.onvoiceschanged = caricaVoci; caricaVoci();
@@ -356,7 +357,7 @@ $('leggi').onclick = async () => {
       speechSynthesis.cancel();
       const frasi = testo.match(/[^.!?;:]+[.!?;:]*/g) || [testo];
       frasi.forEach((f, i) => {
-        const u = new SpeechSynthesisUtterance(f.trim()); u.lang = 'it-IT'; if (voceIt) u.voice = voceIt; u.rate = VELOCITA;
+        const u = new SpeechSynthesisUtterance(f.trim()); u.lang = 'it-IT'; if (voceIt) u.voice = voceIt; u.rate = VELOCITA_LETTURA;
         if (i === frasi.length - 1) u.onend = () => { leggendo = false; $('leggi').classList.remove('on'); };
         speechSynthesis.speak(u);
       });

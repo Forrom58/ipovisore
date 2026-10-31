@@ -36,7 +36,7 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 - Ogni tasto dice a voce cosa ha fatto.
 - Con lo zoom attivo si sposta l'immagine col dito; un doppio tocco la ricentra.
 - **Esci** spegne fotocamera, luce e schermo intero.
-- **Cambio fotocamera**: tenendo premuto Luce la voce dice "Fotocamera 2 di 3" ecc. La scelta resta memorizzata. Quante fotocamere si vedono dipende dal telefono (Realme 12 Pro+: principale 50 MP, zoom 3x 64 MP, grandangolo 8 MP; nessuna macro dedicata).
+- **Cambio fotocamera**: tenendo premuto Luce la voce dice "Fotocamera 2 di 3" ecc. La scelta resta memorizzata. Quante fotocamere si vedono dipende dal telefono (Realme 12 Pro+: principale 50 MP, zoom 3x 64 MP, grandangolo 8 MP; nessuna macro dedicata. Provato il 31/10/2026: Chrome sul Realme ne vede una sola, quindi lì non serve).
 - **Memo**: registrazioni vocali libere, non collegate a foto o testi. Si ascoltano con "Ascolta memo".
 - All'apertura la fotocamera parte da sola. La pagina "Tocca per iniziare" compare solo se la fotocamera non parte (pulsante "Riprova") e dopo Esci (pulsante "Riapri Ipovisore").
 - All'avvio la voce dice "Ipovisore pronto", poi i colori e lo zoom (provato sul Realme il 28/10/2026).
@@ -47,14 +47,15 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 |---|---|---|
 | Livelli di zoom | `const ZOOM` | 1, 1.5, 2, 3, 4, 5, 6, 8, 10 (la voce dice "minimo" e "massimo" agli estremi) |
 | Combinazioni di colori | `const MODI` | normale, scala di grigi, nero su bianco, bianco su nero, giallo su nero, nero su giallo |
-| Velocità della voce | `const VELOCITA` | 0.8 (1 = normale) |
+| Velocità della voce (avvisi dei tasti) | `const VELOCITA` | 0.8 (1 = normale) |
+| Velocità della voce che legge il testo | `const VELOCITA_LETTURA` | 0.9 |
 | Colori dei tasti | `:root` nel CSS | `--t:#4A3426` (marrone), `--g:#F5E6C8` (crema) |
 | Spazio tra i tasti | `.bar` → `gap` | 2.5vh |
 
 ## Come si aggiorna
 
 1. Modificare i file su GitHub. Claude lo fa direttamente.
-2. In `sw.js` aumentare il numero della cache (`ipovisore-v12` diventa `ipovisore-v13`), altrimenti i telefoni non vedono la versione nuova.
+2. In `sw.js` aumentare il numero della cache (`ipovisore-v13` diventa `ipovisore-v14`), altrimenti i telefoni non vedono la versione nuova.
 3. Copiare gli stessi file in `C:\Appoggio-Claude\IPOVISORE`.
 4. Aspettare circa 10 minuti, perché GitHub Pages può servire la versione vecchia per un po'. Poi chiudere e riaprire l'app.
 
