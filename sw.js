@@ -1,4 +1,4 @@
-const CACHE = 'ipovisore-v11';
+const CACHE = 'ipovisore-v12';
 const BASE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

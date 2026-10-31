@@ -114,6 +114,45 @@ function avviso(t, voce = true){
 }
 
 /* ---------- avvio ---------- */
+/* ---------- fotocamere ---------- */
+async function apriCamera(id) {
+  if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+  const v = {width:{ideal:3840}, height:{ideal:2160}};
+  if (id) v.deviceId = {exact:id}; else v.facingMode = {ideal:'environment'};
+  const st = await navigator.mediaDevices.getUserMedia({audio:false, video:v});
+  video.srcObject = st; await video.play();
+  track = st.getVideoTracks()[0];
+  torcia = false; $('luce').classList.remove('on');
+  const cap = track.getCapabilities ? track.getCapabilities() : {};
+  torciaOk = !!cap.torch;
+  $('luce').textContent = torciaOk ? 'Luce' : 'Fuoco';
+  if (cap.focusMode && cap.focusMode.includes('continuous')) {
+    try { await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); } catch(e){}
+  }
+}
+async function camerePosteriori() {
+  const tutte = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+  const post = tutte.filter(d => !/front|anteriore|user/i.test(d.label));
+  return post.length ? post : tutte;
+}
+let cambiando = false;
+async function cambiaCamera() {
+  if (!track || cambiando) return;
+  cambiando = true;
+  try {
+    const lista = await camerePosteriori();
+    if (lista.length < 2) { avviso('Chrome vede una sola fotocamera posteriore'); return; }
+    let i = lista.findIndex(d => d.label && d.label === track.label);
+    if (i < 0) i = lista.findIndex(d => d.deviceId === track.getSettings().deviceId);
+    i = (i + 1) % lista.length;
+    blocca(false);
+    await apriCamera(lista[i].deviceId);
+    s.camId = lista[i].deviceId; s.camLabel = lista[i].label; salva();
+    avviso('Fotocamera ' + (i + 1) + ' di ' + lista.length);
+  } catch(e) { avviso('Cambio fotocamera non riuscito'); try { await apriCamera(null); } catch(_){} }
+  finally { cambiando = false; }
+}
+
 async function avvia() {
   const comeApp = matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches;
   if (!comeApp) {   // solo dentro Chrome: nell'app installata lo schermo intero lo dà il manifest, senza scritte
@@ -121,18 +160,12 @@ async function avvia() {
     try { await screen.orientation.lock('landscape'); } catch(e){}
   }
   try {
-    const st = await navigator.mediaDevices.getUserMedia({
-      audio:false,
-      video:{facingMode:{ideal:'environment'}, width:{ideal:3840}, height:{ideal:2160}}
-    });
-    video.srcObject = st; await video.play();
-    track = st.getVideoTracks()[0];
-    const cap = track.getCapabilities ? track.getCapabilities() : {};
-    torciaOk = !!cap.torch;
-    if (!torciaOk) $('luce').textContent = 'Fuoco';
-    if (cap.focusMode && cap.focusMode.includes('continuous')) {
-      try { await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); } catch(e){}
+    let ok = false;
+    if (s.camId) { try { await apriCamera(s.camId); ok = true; } catch(e){} }
+    if (!ok && s.camLabel) {   // l'identificativo può cambiare: cerco la fotocamera scelta per nome
+      try { const d = (await camerePosteriori()).find(x => x.label === s.camLabel); if (d) { await apriCamera(d.deviceId); s.camId = d.deviceId; salva(); ok = true; } } catch(e){}
     }
+    if (!ok) await apriCamera(null);
     $('avvio').style.display = 'none';
     tieniAcceso(); ridimensiona(); if (!inDisegno) { inDisegno = true; requestAnimationFrame(disegna); }
     parla('Ipovisore pronto. ' + MODI[s.modo].nome + '. ' + nomeZoom() + '.');
@@ -199,7 +232,13 @@ $('zPiu').onclick  = () => { if (s.z < ZOOM.length - 1) s.z++; salva(); avviso(n
 $('zMeno').onclick = () => { if (s.z > 0) s.z--; if (s.z === 0) pan = {x:0, y:0}; salva(); avviso(nomeZoom()); };
 $('colori').onclick = () => { s.modo = (s.modo + 1) % MODI.length; salva(); avviso(MODI[s.modo].nome); };
 
+// tenere premuto Luce per 1 secondo = cambia fotocamera
+let tLuce = null, lungoLuce = false;
+$('luce').addEventListener('pointerdown', () => { lungoLuce = false; tLuce = setTimeout(() => { lungoLuce = true; cambiaCamera(); }, 1000); });
+['pointerup','pointerleave','pointercancel'].forEach(ev => $('luce').addEventListener(ev, () => clearTimeout(tLuce)));
+$('luce').addEventListener('contextmenu', e => e.preventDefault());
 $('luce').onclick = async () => {
+  if (lungoLuce) { lungoLuce = false; return; }
   if (!track) return;
   if (torciaOk) {
     torcia = !torcia;
