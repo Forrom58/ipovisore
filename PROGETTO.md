@@ -40,6 +40,7 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 - **Memo**: registrazioni vocali libere, non collegate a foto o testi. Si ascoltano con "Ascolta memo".
 - All'apertura la fotocamera parte da sola. La pagina "Tocca per iniziare" compare solo se la fotocamera non parte (pulsante "Riprova") e dopo Esci (pulsante "Riapri Ipovisore").
 - All'avvio la voce dice "Ipovisore pronto", poi i colori e lo zoom (provato sul Realme il 28/10/2026).
+- **Aperta dentro Chrome (non installata)**: l'orizzontale si blocca al primo tocco dello schermo (Chrome non lo permette prima). Se il telefono rifiuta e si è in verticale, la voce dice "Gira il telefono in orizzontale". Nell'app installata l'orizzontale lo impone il manifest.
 
 ## Impostazioni nel codice (`index.html`)
 
@@ -55,7 +56,7 @@ Il vecchio repository `visore` è stato cancellato il 28/10/2026. Usare solo `ip
 ## Come si aggiorna
 
 1. Modificare i file su GitHub. Claude lo fa direttamente.
-2. In `sw.js` aumentare il numero della cache (`ipovisore-v13` diventa `ipovisore-v14`), altrimenti i telefoni non vedono la versione nuova.
+2. In `sw.js` aumentare il numero della cache (`ipovisore-v14` diventa `ipovisore-v15`), altrimenti i telefoni non vedono la versione nuova.
 3. Copiare gli stessi file in `C:\Appoggio-Claude\IPOVISORE`.
 4. Aspettare circa 10 minuti, perché GitHub Pages può servire la versione vecchia per un po'. Poi chiudere e riaprire l'app.
 

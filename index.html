@@ -154,11 +154,23 @@ async function cambiaCamera() {
   finally { cambiando = false; }
 }
 
+/* ---------- orizzontale dentro Chrome (app non installata) ---------- */
+let orizzontalePreparato = false, orizzontaleBloccato = false;
+async function bloccaOrizzontale() {
+  try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); } catch(e){}
+  try { await screen.orientation.lock('landscape'); orizzontaleBloccato = true; } catch(e){}
+  if (!orizzontaleBloccato && matchMedia('(orientation: portrait)').matches) parla('Gira il telefono in orizzontale');
+}
+
 async function avvia() {
   const comeApp = matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches;
   if (!comeApp) {   // solo dentro Chrome: nell'app installata lo schermo intero lo dà il manifest, senza scritte
-    try { await document.documentElement.requestFullscreen(); } catch(e){}
-    try { await screen.orientation.lock('landscape'); } catch(e){}
+    if (!orizzontalePreparato) {   // Chrome blocca l'orizzontale solo dopo un tocco: lo faccio al primo tocco
+      orizzontalePreparato = true;
+      document.addEventListener('pointerdown', bloccaOrizzontale, {once:true, capture:true});
+      matchMedia('(orientation: portrait)').addEventListener('change', e => { if (e.matches && !orizzontaleBloccato) parla('Gira il telefono in orizzontale'); });
+    }
+    if (navigator.userActivation && navigator.userActivation.isActive) await bloccaOrizzontale();   // es. tasto Riapri
   }
   try {
     let ok = false;
